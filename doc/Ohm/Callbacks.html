@@ -24,7 +24,7 @@
       <div id="menu">
   
     <a href="../_index.html">Index (C)</a> &raquo; 
-    <span class='title'><a href="../Ohm.html" title="Ohm (module)">Ohm</a></span>
+    <span class='title'><span class='object_link'><a href="../Ohm.html" title="Ohm (module)">Ohm</a></span></span>
      &raquo; 
     <span class="title">Callbacks</span>
   
@@ -43,7 +43,8 @@
     
     <iframe id="search_frame"></iframe>
     
-    <div id="content"><h1>Module: Ohm::Callbacks 
+    <div id="content"><h1>Module: Ohm::Callbacks
+  
   
   
 </h1>
@@ -72,14 +73,16 @@ Minimalistic callback support for Ohm::Model.
 You can implement callbacks by overriding any of the following methods:
 </p>
 <pre class="code">
-   <span class='op'>-</span> <span class='id before_validate'>before_validate</span>
-   <span class='op'>-</span> <span class='id after_validate'>after_validate</span>
-   <span class='op'>-</span> <span class='id before_create'>before_create</span>
-   <span class='op'>-</span> <span class='id after_create'>after_create</span>
-   <span class='op'>-</span> <span class='id before_save'>before_save</span>
-   <span class='op'>-</span> <span class='id after_save'>after_save</span>
-   <span class='op'>-</span> <span class='id before_delete'>before_delete</span>
-   <span class='op'>-</span> <span class='id after_delete'>after_delete</span>
+   * before_validate
+   * after_validate
+   * before_create
+   * after_create
+   * before_save
+   * after_save
+   * before_update
+   * after_update
+   * before_delete
+   * after_delete
 </pre>
 <p>
 If you prefer to do a class level declaration that is also possible.
@@ -134,7 +137,7 @@ If you prefer to do a class level declaration that is also possible.
 <p class="children">
    
     
-      <strong class="modules">Modules:</strong> <a href="Callbacks/Macros.html" title="Ohm::Callbacks::Macros (module)">Macros</a>, <a href="Callbacks/Overrides.html" title="Ohm::Callbacks::Overrides (module)">Overrides</a>
+      <strong class="modules">Modules:</strong> <span class='object_link'><a href="Callbacks/Macros.html" title="Ohm::Callbacks::Macros (module)">Macros</a></span>, <span class='object_link'><a href="Callbacks/Overrides.html" title="Ohm::Callbacks::Overrides (module)">Overrides</a></span>
     
    
     
@@ -144,7 +147,10 @@ If you prefer to do a class level declaration that is also possible.
 
 
   
-    <h2>Instance Method Summary</h2>
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
 
     <ul class="summary">
       
@@ -156,6 +162,7 @@ If you prefer to do a class level declaration that is also possible.
 
     
   </span>
+  
   
   
   
@@ -184,6 +191,7 @@ The overriden create of Ohm::Model.
   
   
   
+  
 
   
     <span class="summary_desc"><div class='inline'></div></span>
@@ -199,6 +207,7 @@ The overriden create of Ohm::Model.
 
     
   </span>
+  
   
   
   
@@ -222,6 +231,7 @@ The overridden save of Ohm::Model.
 
     
   </span>
+  
   
   
   
@@ -274,16 +284,16 @@ If the create succeeds, all after :create callbacks are executed.
       <pre class="lines">
 
 
-165
-166
 167
 168
 169
 170
-171</pre>
+171
+172
+173</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 165</span>
+      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 167</span>
 
 <span class='kw'>def</span> <span class='id create'>create</span>
   <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:create</span><span class='rparen'>)</span>  <span class='kw'>if</span> <span class='id valid?'>valid?</span>
@@ -310,16 +320,16 @@ If the create succeeds, all after :create callbacks are executed.
       <pre class="lines">
 
 
-186
-187
-188
-189
-190
-191
-192</pre>
+196
+197
+198
+199
+200
+201
+202</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 186</span>
+      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 196</span>
 
 <span class='kw'>def</span> <span class='id delete'>delete</span>
   <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:delete</span><span class='rparen'>)</span>
@@ -361,22 +371,38 @@ If the save also succeeds, all after :save callbacks are executed.
       <pre class="lines">
 
 
-178
-179
 180
 181
 182
 183
-184</pre>
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 178</span>
+      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 180</span>
 
 <span class='kw'>def</span> <span class='id save'>save</span>
-  <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:save</span><span class='rparen'>)</span>  <span class='kw'>if</span> <span class='id valid?'>valid?</span>
+  <span class='id existing'>existing</span> <span class='op'>=</span> <span class='op'>!</span><span class='id new?'>new?</span>
+
+  <span class='kw'>if</span> <span class='id valid?'>valid?</span>
+    <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:save</span><span class='rparen'>)</span>  
+    <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:update</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id existing'>existing</span>
+  <span class='kw'>end</span>
 
   <span class='kw'>super</span><span class='period'>.</span><span class='id tap'>tap</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id is_saved'>is_saved</span><span class='op'>|</span>
-    <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:after</span><span class='comma'>,</span> <span class='symbol'>:save</span><span class='rparen'>)</span>  <span class='kw'>if</span> <span class='id is_saved'>is_saved</span>
+    <span class='kw'>if</span> <span class='id is_saved'>is_saved</span>
+      <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:after</span><span class='comma'>,</span> <span class='symbol'>:save</span><span class='rparen'>)</span>  
+      <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:after</span><span class='comma'>,</span> <span class='symbol'>:update</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id existing'>existing</span>
+    <span class='kw'>end</span>
   <span class='kw'>end</span>
 <span class='kw'>end</span></pre>
     </td>
@@ -424,14 +450,14 @@ I&#8217;m still weighing if this is <em>really</em> needed.
       <pre class="lines">
 
 
-154
-155
 156
 157
-158</pre>
+158
+159
+160</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 154</span>
+      <pre class="code"><span class="info file"># File 'lib/ohm/contrib/callbacks.rb', line 156</span>
 
 <span class='kw'>def</span> <span class='id validate'>validate</span>
   <span class='id execute_callback'>execute_callback</span><span class='lparen'>(</span><span class='symbol'>:before</span><span class='comma'>,</span> <span class='symbol'>:validate</span><span class='rparen'>)</span>
@@ -448,9 +474,9 @@ I&#8217;m still weighing if this is <em>really</em> needed.
 </div>
     
     <div id="footer">
-  Generated on Fri Jul  2 20:44:12 2010 by 
-  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool">yard</a>
-  0.5.4 (ruby-1.9.1).
+  Generated on Tue Sep 28 17:11:36 2010 by 
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.6.1 (ruby-1.9.2).
 </div>
 
   </body>
