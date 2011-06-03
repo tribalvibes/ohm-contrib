@@ -153,11 +153,10 @@ module Ohm
     # executed.
     def create
       return unless valid?
-
       execute_callback(:before, :create)
-      execute_callback(:before, :save)
 
       initialize_id
+      execute_callback(:before, :save)
 
       mutex do
         create_model_membership
