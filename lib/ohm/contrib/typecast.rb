@@ -2,20 +2,32 @@ require 'bigdecimal'
 require 'time'
 require 'date'
 require 'forwardable'
+require 'yajl/json_gem' unless defined? JSON
 
-begin
-  require "yajl/json_gem"
-rescue LoadError
-  $stderr.puts(
-    "WARNING: Currently using the `json` gem. You might encounter encoding " +
-    "problems with `Ohm::Types::Hash` and `Ohm::Types::Array`. Best to use " +
-    "the `yajl-ruby` gem to avoid problems and also for performance reasons."
-  )
-
-  require "json"
+unless defined?(silence_warnings)
+  def silence_warnings; yield; end
 end
 
 module Ohm
+
+  # Keep track of declared typecasts for all model classes
+  class Model
+    # backport stubs for non-polymorphic branch
+    if !defined?(@@types)
+      @@types       = Hash.new { |hash, key| hash[key] = {} }
+
+      # Map of the types of defined attributes within a class.
+      # @see Ohm::Model.attribute
+      def self.types(klass=nil)
+        klass ? @@types[klass] : @@types[root].merge(@@types[base])
+      end
+
+      def self.root; self; end  # non-polymorphic version
+      def self.attributes(klass=nil); @@attributes[self]; end
+
+    end
+  end
+
   # Provides all the primitive types. The following are included:
   #
   # * String
@@ -24,13 +36,14 @@ module Ohm
   # * Float
   # * Date
   # * Time
+  # * Timestamp
   # * Hash
   # * Array
   # * Boolean
   module Types
     def self.defined?(type)
-      @_constants ||= constants.map { |c| c.to_sym }
-      @_constants.include?(type.to_sym)
+      @constants ||= constants.map(&:to_sym)
+      @constants.include?(type.to_sym)
     end
 
     def self.[](type)
@@ -44,12 +57,11 @@ module Ohm
 
       @@delegation_blacklist = [
         :==, :to_s, :initialize, :inspect, :object_id, :__send__, :__id__,
-        :respond_to?
+        :respond_to?, :type
       ]
-
+  
       def self.[](value)
         return empty  if value.to_s.empty?
-
         new(value)
       end
 
@@ -58,8 +70,9 @@ module Ohm
       end
 
       def self.delegate_to(klass, except = @@delegation_blacklist)
-        methods = klass.public_instance_methods.map { |e| e.to_sym } - except
+        methods = klass.public_instance_methods.map(&:to_sym) - except
         def_delegators :object, *methods
+        define_method(:type) { klass }
       end
 
       def inspect
@@ -93,10 +106,6 @@ module Ohm
 
     class String < Primitive
       delegate_to ::String
-
-      def type
-        ::String
-      end
     end
 
     class Decimal < Primitive
@@ -104,10 +113,6 @@ module Ohm
 
       def object
         ::Kernel::BigDecimal(@raw)
-      end
-
-      def type
-        ::BigDecimal
       end
     end
 
@@ -117,10 +122,6 @@ module Ohm
       def object
         ::Kernel::Integer(@raw)
       end
-
-      def type
-        ::Fixnum
-      end
     end
 
     class Float < Primitive
@@ -128,10 +129,6 @@ module Ohm
 
       def object
         ::Kernel::Float(@raw)
-      end
-
-      def type
-        ::Float
       end
     end
 
@@ -141,9 +138,28 @@ module Ohm
       def object
         ::Time.parse(@raw).utc
       end
+    end
 
-      def type
-        ::Time
+    # Time including microseconds
+    class Timestamp < Primitive
+      delegate_to ::Time
+      
+      FORMAT = "%Y-%m-%d %H:%M:%S.%6N UTC".freeze
+      
+      def self.now
+        new(::Time.now.utc.strftime(FORMAT))
+      end
+
+      def to_s
+        strftime(FORMAT)
+      end
+
+      def ==(other)
+        object == other
+      end
+
+      def object
+        ::Time.parse(@raw).utc
       end
     end
 
@@ -152,10 +168,6 @@ module Ohm
 
       def object
         ::Date.parse(@raw)
-      end
-
-      def type
-        ::Date
       end
     end
 
@@ -201,39 +213,39 @@ module Ohm
       def respond_to?(method)
         object.respond_to?(method)
       end
-
-      def type
-        self.class::RAW
-      end
     end
 
     class Hash < Serialized
       RAW = ::Hash
-
+      include ::Enumerable
       delegate_to ::Hash
 
       # @private since basic object doesn't include a #class we need
       # to define this manually
-      def class
-        ::Ohm::Types::Hash
+      silence_warnings do
+        def class
+          ::Ohm::Types::Hash
+        end
       end
     end
 
     class Array < Serialized
       RAW = ::Array
-
+      include ::Enumerable
       delegate_to ::Array
 
       # @private since basic object doesn't include a #class we need
       # to define this manually
-      def class
-        ::Ohm::Types::Array
+      silence_warnings do
+        def class
+          ::Ohm::Types::Array
+        end
       end
     end
   end
 
-  # Provides unobtrusive, non-explosive typecasting. Instead of exploding on
-  # set of an invalid value, this module takes the approach of just taking in
+  # Provides unobtrusive, non-explosive typecasting.Instead of exploding on set
+  # of an invalid value, this module takes the approach of just taking in
   # parameters and letting you do validation yourself. The only thing this
   # module does for you is the boilerplate casting you might need to do.
   #
@@ -323,7 +335,7 @@ module Ohm
       #                you need to.
       # @return [Array] the array of attributes already defined.
       # @return [nil] if the attribute is already defined.
-      def attribute(name, type = Ohm::Types::String, klass = Ohm::Types[type])
+      def attribute(name, type = ::String, klass = Ohm::Types[type])
         # Primitive types maintain a reference to the original object
         # stored in @_attributes[att]. Hence mutation works for the
         # Primitive case. For cases like Hash, Array where the value
@@ -339,14 +351,10 @@ module Ohm
           write_local(name, klass[value].to_s)
         end
 
-        attributes << name unless attributes.include?(name)
-        types[name] = type
+        attributes(self) << name unless attributes.include?(name)
+        types(root)[name] = type
       end
       alias :typecast :attribute
-
-      def types
-        @types ||= {}
-      end
 
     private
       def const_missing(name)
