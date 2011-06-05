@@ -163,8 +163,8 @@ module Ohm
         write
         add_to_indices
 
-        execute_callback(:after, :create)
         execute_callback(:after, :save)
+        execute_callback(:after, :create)
       end
     end
 
@@ -184,8 +184,8 @@ module Ohm
         write
         update_indices
 
-        execute_callback(:after, :save)
         execute_callback(:after, :update)
+        execute_callback(:after, :save)
       end
     end
 
