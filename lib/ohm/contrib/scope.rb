@@ -1,15 +1,15 @@
 module Ohm
   module Scope
     def self.included(base)
-      unless defined?(base::DefinedScopes)
-        base.const_set(:DefinedScopes, Module.new)
-      end
-
       base.extend Macros
     end
 
     module Macros
       def scope(scope = nil, &block)
+        unless defined?(self::DefinedScopes)
+          root.const_set(:DefinedScopes, Module.new)
+        end
+
         self::DefinedScopes.module_eval(&block) if block_given?
         self::DefinedScopes.send(:include, scope) if scope
       end
