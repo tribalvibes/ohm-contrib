@@ -16,9 +16,15 @@ module Ohm
       ret.gsub!(/\p{^Alnum}/u, " ")
       ret.strip!
       ret.gsub!(/\s+/, "-")
+      ret << "-" if ret =~ /^-*\d+$/
       ret.downcase
     end
     module_function :slug
+    
+    def is_slug?(s = to_s)
+      s =~ /^[-\p{Alnum}]+$/ && !(s =~ /^-*\d+$/)
+    end
+    module_function :is_slug?
 
     def iconv(str)
       begin
