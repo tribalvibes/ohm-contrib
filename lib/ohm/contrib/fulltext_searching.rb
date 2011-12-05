@@ -33,7 +33,7 @@ module Ohm
       end
 
       def metaphones(str)
-        str.to_s.strip.split(/\s+/).map { |s| double_metaphone(s) }.flatten
+        str.to_s.strip.split(/\p{Space}+/).map { |s| double_metaphone(s) }.flatten
       end
 
       def fulltext(att)
