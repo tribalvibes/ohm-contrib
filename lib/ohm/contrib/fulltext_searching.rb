@@ -27,7 +27,7 @@ module Ohm
       end
   
       def double_metaphone(str)
-        return [] if STOPWORDS.include?(str.to_s.downcase)
+        return [] if stopwords.key?(str.to_s.downcase)
 
         Text::Metaphone.double_metaphone(str).compact
       end
@@ -41,6 +41,10 @@ module Ohm
         
         define_method(field) { self.class.metaphones(send(att)) }
         index(field)
+      end
+      
+      def stopwords
+        @stopwords ||= Hash[STOPWORDS.zip]
       end
     end
 
