@@ -1,3 +1,4 @@
+require "iconv"
 module Ohm
   module Slug
     def self.included(base)
@@ -27,13 +28,7 @@ module Ohm
     module_function :is_slug?
 
     def iconv(str)
-      begin
-        require "iconv"
-
-        Iconv.iconv("ascii//translit//ignore", "utf-8", str)[0]
-      rescue LoadError
-        return str
-      end
+      Iconv.iconv("ascii//translit//ignore", "utf-8", str)[0] rescue str
     end
     module_function :iconv
 

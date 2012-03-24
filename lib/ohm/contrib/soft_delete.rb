@@ -1,5 +1,5 @@
 module Ohm
-  # Provides support for soft deletion
+  # Provides  support for soft deletion
   #
   # @example
   #
