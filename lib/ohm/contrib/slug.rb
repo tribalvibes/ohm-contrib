@@ -23,7 +23,7 @@ module Ohm
     module_function :slug
     
     def is_slug?(s = to_s)
-      s =~ /^[-\p{Alnum}]+$/ && !(s =~ /^-*\d+$/)
+      s =~ /^[-_\p{Alnum}]+$/ && !(s =~ /^-*\d+$/)
     end
     module_function :is_slug?
 
